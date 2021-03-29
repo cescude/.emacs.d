@@ -62,9 +62,16 @@
 (map! "C-o" (lambda ()
               (interactive)
               (occur (word-at-point))))
-(map! "C-x C-m" #'magit-status)
+
 (map! "C-x C-k" (lambda ()
                   (interactive)
                   (if (buffer-modified-p)
                       (kill-buffer-ask (current-buffer))
                     (kill-buffer))))
+(map! "C-x f" #'+ivy/projectile-find-file)
+(map! "M-C-o" (lambda (&optional arg)
+                (interactive "P")
+                (+ivy/project-search arg (word-at-point))))
+
+(map! "C-x C-m" #'magit-status)
+(setq magit-ediff-dwim-show-on-hunks t) ;; Fix ediff'ing on staged/unstaged selections
