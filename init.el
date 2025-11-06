@@ -5,14 +5,35 @@
 ;; installed packages.  Don't delete this line.  If you don't want it,
 ;; just comment it out by adding a semicolon to the start of the line.
 ;; You may delete these explanatory comments.
-;(package-initialize)
+                                        ;(package-initialize)
+
+(defun find-file-at-point-and-jump-to-line ()
+  (interactive)
+  (let ((lineno (when (looking-at "[^:]*:\\([0-9]+\\):") ; eg. filename.txt:123: as in the output of grep -n
+                  (buffer-substring-no-properties
+                   (elt (match-data) 2)
+                   (elt (match-data) 3)))))
+    (find-file-at-point)
+    (when lineno
+      (goto-line (string-to-number lineno)))))
 
 ;; (global-set-key [(C w)] ctl-x-map)
 (global-set-key [(C h)] 'ace-jump-mode)
-(global-set-key [(C x) (l)] 'toggle-truncate-lines)
+(global-set-key [(C x) (l)] 'toggle-truncate-lines-all-windows)
 (global-set-key [(C M return)] 'toggle-frame-maximized)
-(global-set-key [(C x) (C f)] 'find-file-at-point)
+(global-set-key [(C x) (C f)] 'find-file-at-point-and-jump-to-line)
 (global-set-key [(C c) (C w)] 'highlight-tabs)
+
+(global-set-key [(C M .)] 'highlight-symbol-at-point)
+(global-set-key [(C M \,)] 'unhighlight-regexp)
+
+(defun toggle-truncate-lines-all-windows ()
+  (interactive)
+  (let ((arg (if truncate-lines 0 1)))
+    (save-window-excursion
+      (walk-windows (lambda (w)
+                      (select-window w t)
+                      (toggle-truncate-lines arg))))))
 
 (defun highlight-tabs ()
   (interactive)
@@ -34,7 +55,25 @@
 
 ;; (global-set-key [(C x) (C w)] 'kill-region)
 ;; (global-set-key [(C w) (C i)] 'other-window)
-;; (global-set-key [(C o)] (lambda () (interactive) (occur (current-word))))
+(require 'cl)
+(global-set-key [(C o)] (lambda ()
+                          (interactive)
+                          (push-mark)
+                          (let ((line (line-number-at-pos)))
+                            (occur (current-word))
+                            (select-window (get-buffer-window "*Occur*"))
+                            (beginning-of-buffer)
+                            (next-line)
+                            (hl-line-mode t)
+                            (keymap-local-set "TAB" (lambda ()
+                                                      (interactive)
+                                                      (occur-mode-goto-occurrence)
+                                                      (kill-buffer "*Occur*")))
+                            ;(message "%d %d" (string-to-number (current-word)) line)
+                            (loop while (< (string-to-number (current-word)) line)
+                                  do (progn
+                                       ;(message "%d %d" (string-to-number (current-word)) line)
+                                       (next-line))))))
 ;; (global-set-key [(C x) (C k)] 'kill-buffer)
 ;; (global-set-key [(C x) (C m)] 'magit-status)
 ;; (global-set-key [(C x) (C b)] 'mode-line-other-buffer)
@@ -94,32 +133,40 @@ inserts the results directly below in the current buffer."
  '(ediff-split-window-function 'split-window-horizontally)
  '(ediff-window-setup-function 'ediff-setup-windows-plain)
  '(eglot-ignored-server-capabilities
-   '(:completionProvider :signatureHelpProvider :documentHighlightProvider :documentSymbolProvider :workspaceSymbolProvider :codeActionProvider :codeLensProvider :documentFormattingProvider :documentRangeFormattingProvider :documentOnTypeFormattingProvider :colorProvider :foldingRangeProvider :executeCommandProvider))
+   '(:completionProvider :signatureHelpProvider :documentHighlightProvider
+                         :documentSymbolProvider :workspaceSymbolProvider
+                         :codeActionProvider :codeLensProvider
+                         :documentFormattingProvider
+                         :documentRangeFormattingProvider
+                         :documentOnTypeFormattingProvider :colorProvider
+                         :foldingRangeProvider :executeCommandProvider))
  '(indent-tabs-mode nil)
  '(inhibit-startup-screen t)
- '(major-mode-remap-alist
-   '((css-mode . css-ts-mode)
-     (typescript-mode . typescript-ts-mode)
-     (java-mode . java-ts-mode)
-     (js-mode . typescript-ts-mode)
-     (js2-mode . typescript-ts-mode)
-     (json-mode . json-ts-mode)
-     (js-json-mode . json-ts-mode)))
  '(make-backup-files nil)
  '(package-selected-packages
-   '(ini-mode magit lsp-mode yaml-mode typescript-mode gtags-mode haskell-mode sly icomplete-vertical orderless rg web-mode ace-jump-mode))
+   '(ace-jump-mode csv-mode gtags-mode haskell-mode icomplete-vertical ini-mode
+                   lsp-mode magit orderless rg sly typescript-mode web-mode
+                   yaml-mode))
  '(read-buffer-completion-ignore-case t)
  '(tab-width 4)
  '(truncate-lines t)
  '(typescript-ts-mode-indent-offset 4)
  '(whitespace-line-column nil))
 
+ ;; '(major-mode-remap-alist
+ ;;   '((css-mode . css-ts-mode) (typescript-mode . typescript-ts-mode)
+ ;;     (java-mode . java-ts-mode) (js-mode . typescript-ts-mode)
+ ;;     (js2-mode . typescript-ts-mode) (json-mode . json-ts-mode)
+ ;;     (js-json-mode . json-ts-mode)))
+
 (custom-set-faces
  ;; custom-set-faces was added by Custom.
  ;; If you edit it by hand, you could mess it up, so be careful.
  ;; Your init file should contain only one such instance.
  ;; If there is more than one, they won't work right.
- '(default ((t (:inherit nil :extend nil :stipple nil :inverse-video nil :box nil :strike-through nil :overline nil :underline nil :slant normal :weight regular :height 130 :width normal :foundry "nil" :family "Atkinson Hyperlegible")))))
+ '(default ((t (:inherit nil :extend nil :stipple nil :inverse-video nil :box nil :strike-through nil :overline nil :underline nil :slant normal :weight regular :height 120 :width normal :foundry "nil" :family "Maple Mono")))))
+ ;; '(default ((t (:inherit nil :extend nil :stipple nil :inverse-video nil :box nil :strike-through nil :overline nil :underline nil :slant normal :weight regular :height 140 :width normal :foundry "nil" :family "Bona Nova")))))
+ ;; '(default ((t (:inherit nil :extend nil :stipple nil :inverse-video nil :box nil :strike-through nil :overline nil :underline nil :slant normal :weight regular :height 130 :width normal :foundry "nil" :family "Atkinson Hyperlegible")))))
 (put 'upcase-region 'disabled nil)
 (put 'downcase-region 'disabled nil)
 
@@ -208,3 +255,7 @@ inserts the results directly below in the current buffer."
 (setq eglot-events-buffer-size 0);; fix eglot's performance :crossed_fingers:
 
 ;(require 'portal "~/.emacs.d/portal.el")
+
+(add-hook 'compilation-filter-hook
+          '(lambda ()
+             (ansi-color-apply-on-region compilation-filter-start (point))))
