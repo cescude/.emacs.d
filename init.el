@@ -18,7 +18,8 @@
       (goto-line (string-to-number lineno)))))
 
 ;; (global-set-key [(C w)] ctl-x-map)
-(global-set-key [(C h)] 'ace-jump-mode)
+;; (global-set-key [(C h)] 'ace-jump-mode)
+(global-set-key [(C h)] 'avy-goto-word-1)
 (global-set-key [(C x) (l)] 'toggle-truncate-lines-all-windows)
 (global-set-key [(C M return)] 'toggle-frame-maximized)
 (global-set-key [(C x) (C f)] 'find-file-at-point-and-jump-to-line)
@@ -139,13 +140,12 @@ inserts the results directly below in the current buffer."
  '(inhibit-startup-screen t)
  '(make-backup-files nil)
  '(package-selected-packages
-   '(ace-jump-mode csv-mode gtags-mode haskell-mode icomplete-vertical ini-mode
-                   lsp-mode magit orderless rg sly typescript-mode web-mode
-                   yaml-mode))
+   '(ace-jump-mode avy cond-let csv-mode gtags-mode haskell-mode icomplete-vertical
+                   ini-mode jsonrpc lsp-mode magit orderless pet rg sly
+                   typescript-mode web-mode yaml-mode))
  '(read-buffer-completion-ignore-case t)
  '(tab-width 4)
  '(truncate-lines t)
- '(typescript-ts-mode-indent-offset 4)
  '(whitespace-line-column nil))
 
  ;; '(major-mode-remap-alist
@@ -159,7 +159,7 @@ inserts the results directly below in the current buffer."
  ;; If you edit it by hand, you could mess it up, so be careful.
  ;; Your init file should contain only one such instance.
  ;; If there is more than one, they won't work right.
- '(default ((t (:inherit nil :extend nil :stipple nil :inverse-video nil :box nil :strike-through nil :overline nil :underline nil :slant normal :weight regular :height 120 :width normal :foundry "nil" :family "Maple Mono")))))
+ '(default ((t (:inherit nil :extend nil :stipple nil :inverse-video nil :box nil :strike-through nil :overline nil :underline nil :slant normal :weight regular :height 130 :width normal :foundry "nil" :family "Maple Mono NF")))))
  ;; '(default ((t (:inherit nil :extend nil :stipple nil :inverse-video nil :box nil :strike-through nil :overline nil :underline nil :slant normal :weight regular :height 140 :width normal :foundry "nil" :family "Bona Nova")))))
  ;; '(default ((t (:inherit nil :extend nil :stipple nil :inverse-video nil :box nil :strike-through nil :overline nil :underline nil :slant normal :weight regular :height 130 :width normal :foundry "nil" :family "Atkinson Hyperlegible")))))
 (put 'upcase-region 'disabled nil)
@@ -254,3 +254,23 @@ inserts the results directly below in the current buffer."
 (add-hook 'compilation-filter-hook
           '(lambda ()
              (ansi-color-apply-on-region compilation-filter-start (point))))
+
+(load-theme 'leuven t nil)         ;make text readable on a light background :^(
+
+;; I've got a shell script "poetryls" on my $PATH that looks like:
+;;
+;;     #!/bin/sh
+;;     [ -f poetry.lock ] && $(poetry env activate)
+;;     exec pylsp "$@"
+;;
+;; This tries to make sure the poetry environment is activated before launching
+;; our lsp.
+;;
+;; NOTE: eglot must go to the project root (as defined by .git?) before
+;; launching, because otherwise I'm not sure how the poetry.lock check is
+;; working.
+
+(use-package eglot
+  :config
+  (add-to-list 'eglot-server-programs
+               '((python-mode python-ts-mode) . ("poetryls"))))
